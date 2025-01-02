@@ -24,6 +24,6 @@ func (app *Config) routes() {
 
 	// starting the http server
 	if err := router.Run(":80"); err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 }
