@@ -1,18 +1,18 @@
 package main
 
 import (
-	"net/http"
+	"log"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func (app *Config) routes() http.Handler {
+func (app *Config) routes() {
 	router := gin.Default()
 
 	// specify who is allowed to connect
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://*", "http://*"},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-CSRF-TOKEN"},
 		ExposeHeaders:    []string{"Link"},
@@ -22,5 +22,8 @@ func (app *Config) routes() http.Handler {
 
 	router.POST("/", app.Broker)
 
-	return router
+	// starting the http server
+	if err := router.Run(":80"); err != nil {
+		log.Fatal(err)
+	}
 }
