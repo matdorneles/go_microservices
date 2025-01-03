@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const webPort = "80"
+const webPort = ":80"
 
 func (app *Config) routes() {
 	router := gin.Default()

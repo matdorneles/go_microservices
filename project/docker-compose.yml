@@ -1,12 +1,22 @@
+networks:
+  mynetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1
+
 services:
 
   broker-service:
     build:
       context: ./../broker-service
       dockerfile: ./../broker-service/broker-service.dockerfile
-    restart: always
     ports:
       - "8080:80"
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.2
     deploy:
       mode: replicated
       replicas: 1
@@ -15,20 +25,24 @@ services:
     build:
       context: ./../authentication-service
       dockerfile: ./../authentication-service/authentication-service.dockerfile
-    restart: always
     ports:
       - "8081:80"
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.3
     deploy:
       mode: replicated
       replicas: 1
     environment:
-      DSN: "host=postgres port=5432 users=postgres password=password dbname=users sslmode=disabled timezone=UTC-3 connect_timeout=5"
+      DSN: "host=172.18.0.4 port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC-3 connect_timeout=5"
 
   postgres:
     image: 'postgres:14.2'
     ports:
       - "5432:5432"
-    restart: always
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.4
     deploy:
       mode: replicated
       replicas: 1
