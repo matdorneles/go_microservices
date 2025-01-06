@@ -21,6 +21,8 @@ func (app *Config) routes() {
 		MaxAge:           300,
 	}))
 
+	router.POST("/authenticate", app.Authenticate)
+
 	if err := router.Run(webPort); err != nil {
 		log.Panic(err)
 	}
