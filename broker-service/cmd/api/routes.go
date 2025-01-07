@@ -21,6 +21,7 @@ func (app *Config) routes() {
 	}))
 
 	router.POST("/", app.Broker)
+	router.POST("/handle", app.HandleSubmission)
 
 	// starting the http server
 	if err := router.Run(":80"); err != nil {
