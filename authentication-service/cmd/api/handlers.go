@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -20,19 +22,27 @@ func (app *Config) Authenticate(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&requestPayload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// validate the user against the database
 	user, err := app.Models.User.GetByEmail(requestPayload.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
 	}
 
 	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+
+	// log authentication
+	if err = app.logRequest("authentication", fmt.Sprintf("%s logged in", user.Email)); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	payload := jsonResponse{
@@ -41,6 +51,35 @@ func (app *Config) Authenticate(c *gin.Context) {
 		Data:    user,
 	}
 
-	c.JSON(http.StatusAccepted, payload)
+	c.IndentedJSON(http.StatusAccepted, payload)
+}
 
+func (app *Config) logRequest(name, data string) error {
+	var entry struct {
+		Name string `json: "name"`
+		Data string `json: "data"`
+	}
+
+	entry.Name = name
+	entry.Data = data
+
+	jsonData, err := json.MarshalIndent(entry, "", "\t")
+	if err != nil {
+		return err
+	}
+	logServiceURL := "http://logger-service/log"
+
+	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+
+	_, err = client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
