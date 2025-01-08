@@ -5,20 +5,21 @@ import (
 	"log"
 	"time"
 
+	"github.com/matdorneles/go_microservices/logger-service/data"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
-	webPort  = "80"
 	rpcPort  = "5001"
 	gRpcPort = "50001"
-	mongoURL = "mongodb://mongo:27017"
+	mongoURL = "mongodb://172.18.0.6:27017"
 )
 
 var client *mongo.Client
 
 type Config struct {
+	Models data.Models
 }
 
 func main() {
@@ -39,6 +40,13 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	app := Config{
+		Models: data.New(client),
+	}
+
+	// run webserver
+	app.routes()
 }
 
 func connectToMongo() (*mongo.Client, error) {

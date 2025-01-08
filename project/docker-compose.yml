@@ -65,3 +65,28 @@ services:
       - "54321:80"
     depends_on:
       - postgres
+
+  mongo:
+    image: 'mongo:4.2.16-bionic'
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.6
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./db-data/mongo/:/data/db
+
+  logger-service:
+    build:
+      context: ./../logger-service
+      dockerfile: ./../logger-service/logger-service.dockerfile
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.7
+    deploy:
+      mode: replicated
+      replicas: 1
