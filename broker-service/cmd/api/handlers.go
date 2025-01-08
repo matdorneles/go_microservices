@@ -18,11 +18,17 @@ type jsonResponse struct {
 type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
+	Log    LogPlayload `json:"log,omitempty"`
 }
 
 type AuthPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type LogPlayload struct {
+	Name string `json:"name"`
+	Data string `json:"data"`
 }
 
 func (app *Config) Broker(c *gin.Context) {
@@ -44,6 +50,8 @@ func (app *Config) HandleSubmission(c *gin.Context) {
 	switch requestPayload.Action {
 	case "auth":
 		app.authenticate(c, requestPayload.Auth)
+	case "log":
+		app.logItem(c, requestPayload.Log)
 	default:
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "unknown action"})
 	}
@@ -63,6 +71,7 @@ func (app *Config) authenticate(c *gin.Context, a AuthPayload) {
 		return
 	}
 
+	req.Header.Set("Contect-Type", "application/json")
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
@@ -95,6 +104,39 @@ func (app *Config) authenticate(c *gin.Context, a AuthPayload) {
 	payload.Error = false
 	payload.Message = "Authenticated !"
 	payload.Data = jsonFromService.Data
+
+	c.IndentedJSON(http.StatusAccepted, payload)
+}
+
+func (app *Config) logItem(c *gin.Context, entry LogPlayload) {
+	jsonData, _ := json.MarshalIndent(entry, "", "\t")
+	logServiceURL := "http://logger-service/log"
+
+	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+
+	response, err := client.Do(request)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusAccepted {
+		c.IndentedJSON(response.StatusCode, gin.H{"error": "not accepted"})
+		return
+	}
+
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "logged"
 
 	c.IndentedJSON(http.StatusAccepted, payload)
 }
