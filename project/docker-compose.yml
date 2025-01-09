@@ -90,3 +90,12 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+
+  mailhog:
+    image: 'mailhog/mailhog:latest'
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.8
+    ports:
+      - "1025:1025"
+      - "8025:8025"
