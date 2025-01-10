@@ -20,8 +20,7 @@ func (app *Config) routes() {
 		MaxAge:           300,
 	}))
 
-	router.POST("/", app.Broker)
-	router.POST("/handle", app.HandleSubmission)
+	router.POST("/", app.SendMail)
 
 	// starting the http server
 	if err := router.Run(":80"); err != nil {
